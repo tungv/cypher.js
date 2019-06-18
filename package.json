@@ -4,20 +4,28 @@
   "description": "",
   "main": "index.js",
   "gypfile": true,
+  "binary": {
+    "napi_versions": [
+      2,
+      3
+    ]
+  },
   "scripts": {
     "prebuild": "rm -rf {build,prebuilds}",
-    "build": "prebuildify --quiet --napi",
-    "install": "node-gyp-build \"sh prebuild.sh\"",
+    "build": "prebuildify --napi",
+    "install": "prebuild-install || node-gyp-build \"sh prebuild.sh\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Tung Vu <me@tungv.com>",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:tungv/native-cypher.git"
+  },
   "license": "ISC",
   "dependencies": {
-    "bindings": "^1.5.0",
-    "nan": "^2.14.0",
     "node-addon-api": "^1.6.2",
     "node-gyp-build": "^4.1.0",
-    "os-name-cli": "^1.0.0"
+    "prebuild-install": "^5.3.0"
   },
   "devDependencies": {
     "chokidar-cli": "^1.2.2",
