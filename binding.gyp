@@ -7,11 +7,13 @@
         "src/ASTNode.hpp",
         "src/ASTNode.cc"
       ],
-      "include_dirs": ["<!@(node -p \"require('node-addon-api').include\")"],
       "dependencies": ["<!(node -p \"require('node-addon-api').gyp\")"],
+      "include_dirs": [
+        "<!@(node -p \"require('node-addon-api').include\")",
+        "/usr/local/include"
+      ],
       "libraries": [
-        "/usr/local/Cellar/libcypher-parser/0.6.2/lib/libcypher-parser.a",
-        "-L/usr/lib"
+        "/usr/local/lib/libcypher-parser.a", "-L/usr/lib"
       ],
       "cflags!": ["-fno-exceptions"],
       "cflags_cc!": ["-fno-exceptions"],

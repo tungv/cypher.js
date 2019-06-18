@@ -1,4 +1,6 @@
 .history
 .vscode
 node_modules
+build*.log
+prebuilds
 build
