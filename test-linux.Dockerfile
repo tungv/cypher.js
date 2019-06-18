@@ -1,13 +1,7 @@
 FROM node:10
+ARG CACHE_DATE=2016-01-01
+RUN npm init --yes
+COPY tests/linux.js index.js
+RUN ["npm", "install", "native-cypher@1.0.0-alpha.11", "--unsafe-perm", "--production"]
 
-COPY package.json package.json
-COPY package-lock.json package-lock.json
-COPY prebuilds prebuilds
-COPY prebuild.sh prebuild.sh
-COPY binding.gyp binding.gyp
-COPY vendors vendors
-COPY src src
-
-RUN ["npm", "install", "--unsafe-perm", "--production"]
-
-RUN ["node", "src"]
+RUN node index.js

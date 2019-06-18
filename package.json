@@ -1,6 +1,6 @@
 {
   "name": "native-cypher",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha.11",
   "description": "",
   "main": "index.js",
   "gypfile": true,
@@ -10,11 +10,19 @@
       3
     ]
   },
+  "files": [
+    "prebuild.sh",
+    "binding.gyp",
+    "vendors",
+    "src"
+  ],
   "scripts": {
     "prebuild": "rm -rf {build,prebuilds}",
     "build": "prebuildify --napi",
-    "install": "prebuild-install --runtime napi || node-gyp-build \"sh prebuild.sh\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "install": "prebuild-install -r napi || node-gyp-build \"sh prebuild.sh\"",
+    "test": "ava",
+    "build:binary": "sh build-binary.sh",
+    "prepublishOnly": "npm run build:binary"
   },
   "author": "Tung Vu <me@tungv.com>",
   "repository": {
@@ -29,6 +37,7 @@
   },
   "devDependencies": {
     "chokidar-cli": "^1.2.2",
+    "jest": "^24.8.0",
     "prebuildify": "^3.0.0"
   }
 }
