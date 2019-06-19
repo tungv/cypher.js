@@ -20,7 +20,7 @@
     "prebuild": "rm -rf {build,prebuilds}",
     "build": "prebuildify --napi",
     "install": "prebuild-install -r napi || node-gyp-build \"sh prebuild.sh\"",
-    "test": "ava",
+    "test": "jest",
     "build:binary": "sh build-binary.sh",
     "prepublishOnly": "npm run build:binary"
   },
