@@ -19,6 +19,7 @@
   "scripts": {
     "prebuild": "rm -rf {build,prebuilds}",
     "build": "prebuildify --napi",
+    "build:watch": "prebuildify --target 10.0.0 && chokidar src/**/*.{c,cc} -c \"prebuildify --target 10.0.0\"",
     "install": "prebuild-install -r napi || node-gyp-build \"sh prebuild.sh\"",
     "test": "jest",
     "build:binary": "sh build-binary.sh",
