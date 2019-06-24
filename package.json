@@ -32,13 +32,52 @@
   },
   "license": "ISC",
   "dependencies": {
+    "estree-walker": "^0.6.1",
     "node-addon-api": "^1.6.2",
     "node-gyp-build": "^4.1.0",
     "prebuild-install": "^5.3.0"
   },
   "devDependencies": {
+    "babel-eslint": "^9.0.0",
     "chokidar-cli": "^1.2.2",
+    "eslint": "^5.16.0",
+    "eslint-plugin-flowtype": "^2.50.3",
+    "eslint-plugin-import": "^2.17.3",
+    "eslint-plugin-jsx-a11y": "^6.2.1",
+    "eslint-plugin-react": "^7.14.0",
+    "eslint-plugin-react-hooks": "^1.5.0",
+    "husky": "^2.4.1",
     "jest": "^24.8.0",
-    "prebuildify": "^3.0.0"
+    "lint-staged": "^8.2.1",
+    "prebuildify": "^3.0.0",
+    "prettier": "^1.18.2",
+    "prettier-eslint": "^9.0.0",
+    "prettier-eslint-cli": "^5.0.0"
+  },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "node_modules",
+      ".vscode",
+      ".history"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "pre-push": "npm test"
+    }
+  },
+  "lint-staged": {
+    "linters": {
+      "*.js": [
+        "prettier-eslint --write",
+        "eslint --max-warnings 0 --fix",
+        "git add"
+      ],
+      "*.{json,md}": [
+        "prettier-eslint --write",
+        "git add"
+      ]
+    }
   }
 }
