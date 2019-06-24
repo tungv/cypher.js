@@ -1,3 +1,5 @@
+const walkExpression = require('./binary-operator');
+const DEBUG = require('./DEBUG');
 const { walk } = require('estree-walker');
 
 const identity = x => x;
@@ -11,17 +13,43 @@ const onEnter = {
     buffer.push('MATCH ');
   },
 
-  'node-pattern'() {
-    return '(';
+  'node-pattern'(buffer, node) {
+    buffer.push('(');
+
+    if (node.identifier) {
+      buffer.push(node.identifier.name);
+    }
+
+    if (node.labels) {
+      buffer.push(...node.labels.map(l => `:${l.name}`));
+    }
+
+    if (node.properties) {
+      walkExpression(buffer, node.properties);
+    }
+
+    buffer.push(')');
+
+    this.skip();
   },
-  identifier(buffer, node) {
-    buffer.push(node.name);
-  },
-  parameter(buffer, node) {
-    return `$${node.name}`;
-  },
-  return() {
-    return 'RETURN ';
+  return(buffer, node) {
+    buffer.push('RETURN ');
+    if (node.distinct) {
+      buffer.push('DISTINCT ');
+    }
+    if (node.includeExisting) {
+      buffer.push('* ');
+    }
+
+    if (node.projections) {
+      const projections = node.projections.map(proj => {
+        const exp = [];
+        walkExpression(exp, proj);
+        return exp.join('');
+      });
+
+      buffer.push(projections.join(', '));
+    }
   },
   create(buffer, node) {
     buffer.push('CREATE ');
@@ -30,45 +58,22 @@ const onEnter = {
       buffer.push('UNIQUE ');
     }
   },
-  label(buffer, node) {
-    buffer.push(':', node.name);
-  },
-  string(buffer, node) {
-    buffer.push(JSON.stringify(node.value));
-  },
-  integer(buffer, node) {
-    buffer.push(String(node.value));
-  },
 };
 
 const onLeave = {
   statement() {
     return ';';
   },
-  'node-pattern'(buffer, node) {
-    if (node.properties) {
-      const map = [];
-      for (const [key, value] of Object.entries(node.properties.entries)) {
-        const entry = [key, ': ', print(value)].join('');
-        map.push(entry);
-      }
-
-      const long = map.length > 1;
-
-      buffer.push(long ? ' {\n  ' : ' { ');
-      buffer.push(map.join(long ? ',\n  ' : ', '));
-      buffer.push(long ? '\n}' : ' }');
+  match(buffer, node) {
+    if (node.predicate) {
+      buffer.push('\nWHERE ');
+      walkExpression(buffer, node.predicate);
     }
-    buffer.push(')');
-  },
-  match() {
-    return '\n';
+
+    buffer.push('\n');
   },
   create() {
     return '\n';
-  },
-  'prop-name'(buffer, node) {
-    buffer.push('.', node.value);
   },
 };
 
@@ -85,7 +90,7 @@ function print(ast, transform = identity) {
           buffer.push(out);
         }
       } else if (typeof onLeave[node.type] !== 'function') {
-        console.log('> (unhandled)', node.type);
+        DEBUG.verbose() && console.log('> (unhandled)', node.type);
       }
     },
     leave(node, parent, prop, index) {
@@ -96,7 +101,7 @@ function print(ast, transform = identity) {
           buffer.push(out);
         }
       } else if (typeof onEnter[node.type] !== 'function') {
-        console.log('< (unhandled)', node.type);
+        DEBUG.verbose() && console.log('< (unhandled)', node.type);
       }
     },
   });

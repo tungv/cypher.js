@@ -8,6 +8,7 @@ parserOptions:
     es6: true
 
 rules:
+  semi: error
   comma-dangle: [2, always-multiline]
   no-unused-vars:
     - error
