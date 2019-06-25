@@ -6,11 +6,11 @@ const identity = x => x;
 
 function walkProjections(buffer, node) {
   if (node.distinct) {
-    buffer.push('DISTINCT ')
+    buffer.push('DISTINCT ');
   }
 
   if (node.includeExisting) {
-    buffer.push('* ')
+    buffer.push('* ');
   }
 
   if (node.projections) {
@@ -45,74 +45,82 @@ const onEnter = {
   'on-create'(buffer, node) {
     buffer.push('\nON CREATE SET ');
 
-    buffer.push(node.items.map(item => {
-      const exp = [];
-      if (item.type === 'set-property') {
-        walkExpression(exp, item.property);
-        exp.push(' = ');
-        walkExpression(exp, item.expression);
-      }
+    buffer.push(
+      node.items
+        .map(item => {
+          const exp = [];
+          if (item.type === 'set-property') {
+            walkExpression(exp, item.property);
+            exp.push(' = ');
+            walkExpression(exp, item.expression);
+          }
 
-      if (item.type === 'merge-properties') {
-        exp.push(item.identifier.name, ' += ');
-        walkExpression(exp, item.expression);
-      }
+          if (item.type === 'merge-properties') {
+            exp.push(item.identifier.name, ' += ');
+            walkExpression(exp, item.expression);
+          }
 
-      return exp.join('');
-    }).join(', '));
+          return exp.join('');
+        })
+        .join(', '),
+    );
 
     this.skip();
   },
   'on-match'(buffer, node) {
     buffer.push('\nON MATCH SET ');
 
-    buffer.push(node.items.map(item => {
-      const exp = [];
-      if (item.type === 'set-property') {
-        walkExpression(exp, item.property);
-        exp.push(' = ');
-        walkExpression(exp, item.expression);
-      }
+    buffer.push(
+      node.items
+        .map(item => {
+          const exp = [];
+          if (item.type === 'set-property') {
+            walkExpression(exp, item.property);
+            exp.push(' = ');
+            walkExpression(exp, item.expression);
+          }
 
-      if (item.type === 'merge-properties') {
-        exp.push(item.identifier.name, ' += ');
-        walkExpression(exp, item.expression);
-      }
+          if (item.type === 'merge-properties') {
+            exp.push(item.identifier.name, ' += ');
+            walkExpression(exp, item.expression);
+          }
 
-      return exp.join('');
-    }).join(', '));
+          return exp.join('');
+        })
+        .join(', '),
+    );
 
     this.skip();
   },
-  'unwind'(buffer, node) {
+  unwind(buffer, node) {
     buffer.push('\nUNWIND ');
 
     const exp = [];
     walkExpression(exp, node.expression);
-    buffer.push(exp.join(""));
-    buffer.push(" AS ", node.alias.name, "\n");
+    buffer.push(exp.join(''));
+    buffer.push(' AS ', node.alias.name, '\n');
   },
   with(buffer, node) {
-    buffer.push('\nWITH ')
+    buffer.push('\nWITH ');
 
     walkProjections(buffer, node);
   },
 
   delete(buffer, node) {
     if (node.detach) {
-      buffer.push("DETACH ");
+      buffer.push('DETACH ');
     }
 
-    buffer.push("DELETE ");
+    buffer.push('DELETE ');
 
     buffer.push(
       ...node.expressions
         .map(expNode => {
           const exp = [];
           walkExpression(exp, expNode);
-          return exp.join("");
+          return exp.join('');
         })
-        .join(", ")
+        .join(', '),
     );
   },
 
@@ -212,7 +220,7 @@ function print(ast, transform = identity) {
   function walkNode() {
     const M = new WeakMap();
 
-    return function (handlers) {
+    return function(handlers) {
       walk(ast, {
         enter(node) {
           const handler = handlers[node.type];
