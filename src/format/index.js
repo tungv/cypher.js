@@ -13,6 +13,27 @@ const onEnter = {
     buffer.push('MATCH ');
   },
 
+  merge(buffer) {
+    buffer.push('MERGE ');
+  },
+
+  "on-create"() {
+    return "\nON CREATE ";
+  },
+  "on-match"() {
+    return "\nON MATCH ";
+  },
+
+  "set-property"(buffer, node) {
+    buffer.push("SET ");
+    const prop = [];
+    walkExpression(prop, node.property);
+    prop.push(" = ");
+    walkExpression(prop, node.expression);
+
+    buffer.push(prop.join(""));
+  },
+
   'node-pattern'(buffer, node) {
     buffer.push('(');
 
@@ -31,6 +52,37 @@ const onEnter = {
     buffer.push(')');
 
     this.skip();
+  },
+  'rel-pattern'(buffer, node) {
+    if (node.direction === 0) {
+      buffer.push("<-");
+    }
+    if (node.direction === 1) {
+      buffer.push("-");
+    }
+
+    buffer.push("[");
+
+    if (node.identifier) {
+      buffer.push(node.identifier.name);
+    }
+
+    if (node.reltypes) {
+      buffer.push(...node.reltypes.map(l => `:${l.name}`));
+    }
+
+    if (node.properties) {
+      walkExpression(buffer, node.properties);
+    }
+
+    buffer.push("]");
+
+    if (node.direction === 0) {
+      buffer.push("-");
+    }
+    if (node.direction === 1) {
+      buffer.push("->");
+    }
   },
   return(buffer, node) {
     buffer.push('RETURN ');
@@ -72,6 +124,9 @@ const onLeave = {
 
     buffer.push('\n');
   },
+  merge() {
+    return "\n";
+  },
   create() {
     return '\n';
   },
@@ -80,6 +135,34 @@ const onLeave = {
 // eslint-disable-next-line no-unused-vars
 function print(ast, transform = identity) {
   const buffer = [];
+
+  // transform
+  function walkNode() {
+    const M = new WeakMap();
+
+    return function (handlers) {
+      walk(ast, {
+        enter(node) {
+          const handler = handlers[node.type];
+
+          if (typeof handler === 'function') {
+            const onLeave = handler(node);
+            if (typeof onLeave === 'function') {
+              M.set(node, onLeave);
+            }
+          }
+        },
+        leave(node) {
+          if (M.has(node)) {
+            const fn = M.get(node);
+            fn();
+          }
+        }
+      })
+    }
+  }
+
+  transform(walkNode());
 
   walk(ast, {
     enter(node, parent, prop, index) {
