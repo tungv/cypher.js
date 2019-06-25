@@ -6,6 +6,7 @@ const identity = x => x;
 
 const onEnter = {
   match(buffer, node) {
+    buffer.push('\n');
     if (node.optional) {
       buffer.push('OPTIONAL ');
     }
@@ -14,24 +15,24 @@ const onEnter = {
   },
 
   merge(buffer) {
-    buffer.push('MERGE ');
+    buffer.push('\nMERGE ');
   },
 
-  "on-create"() {
-    return "\nON CREATE ";
+  'on-create'() {
+    return '\nON CREATE ';
   },
-  "on-match"() {
-    return "\nON MATCH ";
+  'on-match'() {
+    return '\nON MATCH ';
   },
 
-  "set-property"(buffer, node) {
-    buffer.push("SET ");
+  'set-property'(buffer, node) {
+    buffer.push('SET ');
     const prop = [];
     walkExpression(prop, node.property);
-    prop.push(" = ");
+    prop.push(' = ');
     walkExpression(prop, node.expression);
 
-    buffer.push(prop.join(""));
+    buffer.push(prop.join(''));
   },
 
   'node-pattern'(buffer, node) {
@@ -46,6 +47,7 @@ const onEnter = {
     }
 
     if (node.properties) {
+      buffer.push(' ');
       walkExpression(buffer, node.properties);
     }
 
@@ -55,13 +57,13 @@ const onEnter = {
   },
   'rel-pattern'(buffer, node) {
     if (node.direction === 0) {
-      buffer.push("<-");
+      buffer.push('<-');
     }
     if (node.direction === 1) {
-      buffer.push("-");
+      buffer.push('-');
     }
 
-    buffer.push("[");
+    buffer.push('[');
 
     if (node.identifier) {
       buffer.push(node.identifier.name);
@@ -72,20 +74,21 @@ const onEnter = {
     }
 
     if (node.properties) {
+      buffer.push(' ');
       walkExpression(buffer, node.properties);
     }
 
-    buffer.push("]");
+    buffer.push(']');
 
     if (node.direction === 0) {
-      buffer.push("-");
+      buffer.push('-');
     }
     if (node.direction === 1) {
-      buffer.push("->");
+      buffer.push('->');
     }
   },
   return(buffer, node) {
-    buffer.push('RETURN ');
+    buffer.push('\nRETURN ');
     if (node.distinct) {
       buffer.push('DISTINCT ');
     }
@@ -104,7 +107,7 @@ const onEnter = {
     }
   },
   create(buffer, node) {
-    buffer.push('CREATE ');
+    buffer.push('\nCREATE ');
 
     if (node.unique) {
       buffer.push('UNIQUE ');
@@ -124,12 +127,6 @@ const onLeave = {
 
     buffer.push('\n');
   },
-  merge() {
-    return "\n";
-  },
-  create() {
-    return '\n';
-  },
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -140,7 +137,7 @@ function print(ast, transform = identity) {
   function walkNode() {
     const M = new WeakMap();
 
-    return function (handlers) {
+    return function(handlers) {
       walk(ast, {
         enter(node) {
           const handler = handlers[node.type];
@@ -157,9 +154,9 @@ function print(ast, transform = identity) {
             const fn = M.get(node);
             fn();
           }
-        }
-      })
-    }
+        },
+      });
+    };
   }
 
   transform(walkNode());
@@ -189,7 +186,10 @@ function print(ast, transform = identity) {
     },
   });
 
-  return buffer.join('');
+  return buffer
+    .join('')
+    .replace(/\n{2,}/gm, '\n')
+    .trim();
 }
 
 module.exports = print;

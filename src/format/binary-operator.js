@@ -140,7 +140,7 @@ const onEnterExpression = {
       map.push(exp.join(''));
     }
     const long = map.length > 1;
-    buffer.push(long ? ' {\n  ' : ' { ');
+    buffer.push(long ? '{\n  ' : '{ ');
     buffer.push(map.join(long ? ',\n  ' : ', '));
     buffer.push(long ? '\n}' : ' }');
   },
