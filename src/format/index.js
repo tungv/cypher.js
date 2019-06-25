@@ -4,6 +4,30 @@ const { walk } = require('estree-walker');
 
 const identity = x => x;
 
+function walkProjections(buffer, node) {
+  if (node.distinct) {
+    buffer.push('DISTINCT ')
+  }
+
+  if (node.includeExisting) {
+    buffer.push('* ')
+  }
+
+  if (node.projections) {
+    const projections = node.projections.map(proj => {
+      const exp = [];
+      walkExpression(exp, proj);
+
+      if (proj.alias) {
+        exp.push(' AS ', proj.alias.name);
+      }
+      return exp.join('');
+    });
+
+    buffer.push(projections.join(', '));
+  }
+}
+
 const onEnter = {
   match(buffer, node) {
     buffer.push('\n');
@@ -23,6 +47,11 @@ const onEnter = {
   },
   'on-match'() {
     return '\nON MATCH ';
+  },
+  with(buffer, node) {
+    buffer.push('\nWITH ')
+
+    walkProjections(buffer, node);
   },
 
   'set-property'(buffer, node) {
@@ -89,22 +118,7 @@ const onEnter = {
   },
   return(buffer, node) {
     buffer.push('\nRETURN ');
-    if (node.distinct) {
-      buffer.push('DISTINCT ');
-    }
-    if (node.includeExisting) {
-      buffer.push('* ');
-    }
-
-    if (node.projections) {
-      const projections = node.projections.map(proj => {
-        const exp = [];
-        walkExpression(exp, proj);
-        return exp.join('');
-      });
-
-      buffer.push(projections.join(', '));
-    }
+    walkProjections(buffer, node);
   },
   create(buffer, node) {
     buffer.push('\nCREATE ');
@@ -137,7 +151,7 @@ function print(ast, transform = identity) {
   function walkNode() {
     const M = new WeakMap();
 
-    return function(handlers) {
+    return function (handlers) {
       walk(ast, {
         enter(node) {
           const handler = handlers[node.type];
