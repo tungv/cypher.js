@@ -28,7 +28,7 @@
   "author": "Tung Vu <me@tungv.com>",
   "repository": {
     "type": "git",
-    "url": "git@github.com:tungv/native-cypher.git"
+    "url": "git@github.com:tungv/cypher.js.git"
   },
   "license": "ISC",
   "dependencies": {
