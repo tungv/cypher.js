@@ -104,6 +104,7 @@ const onEnter = {
     buffer.push('\nWITH ');
 
     walkProjections(buffer, node);
+    buffer.push('\n');
   },
 
   delete(buffer, node) {
