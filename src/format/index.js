@@ -62,6 +62,24 @@ const onEnter = {
     walkProjections(buffer, node);
   },
 
+  delete(buffer, node) {
+    if (node.detach) {
+      buffer.push("DETACH ");
+    }
+
+    buffer.push("DELETE ");
+
+    buffer.push(
+      ...node.expressions
+        .map(expNode => {
+          const exp = [];
+          walkExpression(exp, expNode);
+          return exp.join("");
+        })
+        .join(", ")
+    );
+  },
+
   'set-property'(buffer, node) {
     buffer.push('SET ');
     const prop = [];
