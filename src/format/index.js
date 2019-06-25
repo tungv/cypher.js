@@ -48,6 +48,14 @@ const onEnter = {
   'on-match'() {
     return '\nON MATCH ';
   },
+  'unwind'(buffer, node) {
+    buffer.push('\nUNWIND ');
+
+    const exp = [];
+    walkExpression(exp, node.expression);
+    buffer.push(exp.join(""));
+    buffer.push(" AS ", node.alias.name, "\n");
+  },
   with(buffer, node) {
     buffer.push('\nWITH ')
 
