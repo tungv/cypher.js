@@ -69,7 +69,7 @@
   },
   "lint-staged": {
     "linters": {
-      "*.js": [
+      "src/*.js": [
         "prettier-eslint --write",
         "eslint --max-warnings 0 --fix",
         "git add"
