@@ -1,6 +1,6 @@
-const { parse } = require("native-cypher");
+const { parse } = require('cypher.js');
 
-console.log(parse("MATCH (r) RETURN r"));
+console.log(parse('MATCH (r) RETURN r'));
 
 const query = /* cypher */ `
   MATCH (n)

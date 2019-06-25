@@ -1,5 +1,5 @@
 {
-  "name": "native-cypher",
+  "name": "cypher.js",
   "version": "1.0.0-beta.2",
   "description": "",
   "main": "index.js",
@@ -69,7 +69,7 @@
   },
   "lint-staged": {
     "linters": {
-      "*.js": [
+      "src/**/*.js": [
         "prettier-eslint --write",
         "eslint --max-warnings 0 --fix",
         "git add"
