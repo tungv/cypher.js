@@ -42,11 +42,47 @@ const onEnter = {
     buffer.push('\nMERGE ');
   },
 
-  'on-create'() {
-    return '\nON CREATE ';
+  'on-create'(buffer, node) {
+    buffer.push('\nON CREATE SET ');
+
+    buffer.push(node.items.map(item => {
+      const exp = [];
+      if (item.type === 'set-property') {
+        walkExpression(exp, item.property);
+        exp.push(' = ');
+        walkExpression(exp, item.expression);
+      }
+
+      if (item.type === 'merge-properties') {
+        exp.push(item.identifier.name, ' += ');
+        walkExpression(exp, item.expression);
+      }
+
+      return exp.join('');
+    }).join(', '));
+
+    this.skip();
   },
-  'on-match'() {
-    return '\nON MATCH ';
+  'on-match'(buffer, node) {
+    buffer.push('\nON MATCH SET ');
+
+    buffer.push(node.items.map(item => {
+      const exp = [];
+      if (item.type === 'set-property') {
+        walkExpression(exp, item.property);
+        exp.push(' = ');
+        walkExpression(exp, item.expression);
+      }
+
+      if (item.type === 'merge-properties') {
+        exp.push(item.identifier.name, ' += ');
+        walkExpression(exp, item.expression);
+      }
+
+      return exp.join('');
+    }).join(', '));
+
+    this.skip();
   },
   'unwind'(buffer, node) {
     buffer.push('\nUNWIND ');
@@ -81,8 +117,7 @@ const onEnter = {
   },
 
   'set-property'(buffer, node) {
-    buffer.push('SET ');
-    const prop = [];
+    const prop = ['SET '];
     walkExpression(prop, node.property);
     prop.push(' = ');
     walkExpression(prop, node.expression);
