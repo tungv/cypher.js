@@ -159,6 +159,9 @@ const onEnterExpression = {
   true() {
     return 'true';
   },
+  float(buffer, node) {
+    buffer.push(JSON.stringify(node.value));
+  },
 };
 
 const onLeaveExpression = {

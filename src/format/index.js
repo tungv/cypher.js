@@ -197,6 +197,28 @@ const onEnter = {
       buffer.push('UNIQUE ');
     }
   },
+  set(buffer, node) {
+    buffer.push('\nSET ');
+    buffer.push(
+      node.items
+        .map(item => {
+          const exp = [];
+          if (item.type === 'set-property') {
+            walkExpression(exp, item.property);
+            exp.push(' = ');
+            walkExpression(exp, item.expression);
+          }
+
+          if (item.type === 'merge-properties') {
+            exp.push(item.identifier.name, ' += ');
+            walkExpression(exp, item.expression);
+          }
+
+          return exp.join('');
+        })
+        .join(', '),
+    );
+  },
 };
 
 const onLeave = {
