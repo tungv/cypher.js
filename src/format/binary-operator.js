@@ -153,6 +153,12 @@ const onEnterExpression = {
   integer(buffer, node) {
     buffer.push(JSON.stringify(node.value));
   },
+  false() {
+    return 'false';
+  },
+  true() {
+    return 'true';
+  },
 };
 
 const onLeaveExpression = {

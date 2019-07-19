@@ -13,6 +13,19 @@ describe('MERGE', () => {
     );
   });
 
+  test('MERGE with pattern', () => {
+    const query = /* cypher */ `
+      MERGE (a:L1 {id: $id})<-[:R1 {k: 'v'}]-(b:L2)-[:R2 { k: 'v'}]->(c:L3 {k:'v'})
+    `;
+
+    const ast = parse(query);
+    const formatted = print(ast.root);
+
+    expect(formatted).toEqual(
+      /* cypher */ `MERGE (a:L1 { id: $id })<-[:R1 { k: "v" }]-(b:L2)-[:R2 { k: "v" }]->(c:L3 { k: "v" });`,
+    );
+  });
+
   test('MERGE with ON CREATE', () => {
     const query = /* cypher */ `
       MERGE (u:USER { username: "test"})-[r:CREATED]->(p:PRODUCT { id: 1 })
