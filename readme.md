@@ -1,6 +1,6 @@
 # cypher.js
 
-Utilities to parse, transform and format cypher query. Inspired by [node-cypher-parser](https://github.com/Loupi/node-cypher-parser) with 3 main difference:
+Utilities to parse, transform and format cypher query. Inspired by [node-cypher-parser](https://github.com/Loupi/node-cypher-parser) with 3 main differences:
 
 1. this package can handle long query (longer than 1024 characters)
 2. this package doesn't rename `node.type` from `libcypher-parser`
