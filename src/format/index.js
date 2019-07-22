@@ -162,7 +162,9 @@ const onEnter = {
       buffer.push('-');
     }
 
-    buffer.push('[');
+    const emptyRel = node.reltypes.length === 0 && node.identifier == null;
+
+    if (!emptyRel) buffer.push('[');
 
     if (node.identifier) {
       buffer.push(node.identifier.name);
@@ -177,7 +179,7 @@ const onEnter = {
       walkExpression(buffer, node.properties);
     }
 
-    buffer.push(']');
+    if (!emptyRel) buffer.push(']');
 
     if (node.direction === 0) {
       buffer.push('-');
@@ -218,6 +220,7 @@ const onEnter = {
         })
         .join(', '),
     );
+    this.skip();
   },
 };
 

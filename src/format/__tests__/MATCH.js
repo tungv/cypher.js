@@ -53,4 +53,16 @@ RETURN n;`);
 
     expect(formatted).toEqual(`MATCH (n { additional: 1 })\nRETURN n;`);
   });
+
+  it('should work with SET', () => {
+    const query = /* cypher */ `
+    MATCH (a)<--(b)
+    SET a.x = b.y
+  `;
+
+    const ast = parse(query);
+    const formatted = print(ast.root);
+    expect(formatted).toEqual(/* cypher */ `MATCH (a)<--(b)
+SET a.x = b.y;`);
+  });
 });
