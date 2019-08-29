@@ -65,4 +65,15 @@ RETURN n;`);
     expect(formatted).toEqual(/* cypher */ `MATCH (a)<--(b)
 SET a.x = b.y;`);
   });
+
+  it('should work with plucking properties', () => {
+    const query = /* cypher */ `
+    MATCH (n) RETURN n { .a , .b , .c } as plucked; 
+    `;
+
+    const ast = parse(query);
+    const formatted = print(ast.root);
+    expect(formatted).toEqual(/* cypher */ `MATCH (n)
+RETURN n { .a, .b, .c } AS plucked;`);
+  });
 });

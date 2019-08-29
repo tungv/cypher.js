@@ -144,6 +144,22 @@ const onEnterExpression = {
     buffer.push(map.join(long ? ',\n  ' : ', '));
     buffer.push(long ? '\n}' : ' }');
   },
+  'map-projection'(buffer, node) {
+    walkExpression(buffer, node.expression);
+    buffer.push(' { ');
+    buffer.push(
+      node.selectors
+        .map(selection => {
+          const selectionBuffer = [];
+          walkExpression(selectionBuffer, selection.propName);
+          return selectionBuffer.join('');
+        })
+        .join(', '),
+    );
+    buffer.push(' }');
+
+    this.skip();
+  },
   true(buffer, node) {
     buffer.push(node.type);
   },

@@ -16,7 +16,11 @@ function walkProjections(buffer, node) {
   if (node.projections) {
     const projections = node.projections.map(proj => {
       const exp = [];
-      walkExpression(exp, proj);
+      walkExpression(exp, proj.expression);
+
+      if (proj.selectors) {
+        walkExpression(exp, proj.selectors);
+      }
 
       if (proj.alias) {
         exp.push(' AS ', proj.alias.name);
