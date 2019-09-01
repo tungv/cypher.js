@@ -1,0 +1,2 @@
+MATCH (n)
+    RETURN n { a: [(n)<-[:someRel]-(b) | b.key]};

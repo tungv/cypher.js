@@ -12,6 +12,26 @@ describe('MATCH', () => {
 RETURN n;`);
   });
 
+  it('should work with alias', () => {
+    const query = 'MATCH (n) RETURN n as m;';
+
+    const ast = parse(query);
+    const formatted = print(ast.root);
+
+    expect(formatted).toEqual(`MATCH (n)
+RETURN n AS m;`);
+  });
+
+  it('should work with multiple returns', () => {
+    const query = 'MATCH (a)--(b) RETURN a AS x, b AS y;';
+
+    const ast = parse(query);
+    const formatted = print(ast.root);
+
+    expect(formatted).toEqual(`MATCH (a)--(b)
+RETURN a AS x, b AS y;`);
+  });
+
   it('should work with WHERE', () => {
     const query =
       'MATCH (n) WHERE n.key_1 = "string" AND 1 = n.key_2 RETURN n;';

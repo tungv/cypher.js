@@ -1,308 +1,187 @@
-const walkExpression = require('./binary-operator');
-const DEBUG = require('./DEBUG');
-const { walk } = require('estree-walker');
+const handlers = require('./handlers');
+const makeWalker = require('./makeWalker');
 
-const identity = x => x;
+function print(ast, transform) {
+  const ctx = {
+    buffer: [],
+    before: new WeakMap(),
+    after: new WeakMap(),
+    between: new WeakMap(),
+  };
 
-function walkProjections(buffer, node) {
-  if (node.distinct) {
-    buffer.push('DISTINCT ');
-  }
+  if (transform) {
+    let transformHandlers = {};
 
-  if (node.includeExisting) {
-    buffer.push('* ');
-  }
+    const capture = function(_transformHandlers) {
+      transformHandlers = _transformHandlers;
+    };
 
-  if (node.projections) {
-    const projections = node.projections.map(proj => {
-      const exp = [];
-      walkExpression(exp, proj.expression);
+    transform(capture);
 
-      if (proj.selectors) {
-        walkExpression(exp, proj.selectors);
+    const transformWalk = makeWalker((node, parent) => {
+      const handler = transformHandlers[node.type];
+
+      if (typeof handler === 'function') {
+        const leave = handler(node, parent);
+
+        return leave;
       }
-
-      if (proj.alias) {
-        exp.push(' AS ', proj.alias.name);
-      }
-      return exp.join('');
     });
 
-    buffer.push(projections.join(', '));
+    transformWalk(ast);
   }
-}
 
-const onEnter = {
-  match(buffer, node) {
-    buffer.push('\n');
-    if (node.optional) {
-      buffer.push('OPTIONAL ');
+  const walk = makeWalker(function(
+    node,
+    parent,
+    prop,
+    index,
+    siblingCount,
+    depth,
+  ) {
+    const handler = handlers[node.type];
+    let unhandled = typeof handler !== 'function';
+    let posthooks = [];
+    let betweenHooks = [];
+
+    if (ctx.before.has(parent)) {
+      const beforeHandlers = ctx.before.get(parent);
+      if (beforeHandlers[prop]) {
+        unhandled = false;
+        beforeHandlers[prop].forEach(prehook => {
+          prehook();
+        });
+      }
+    }
+    if (ctx.after.has(parent)) {
+      const afterHandlers = ctx.after.get(parent);
+      if (afterHandlers[prop]) {
+        unhandled = false;
+        posthooks = afterHandlers[prop];
+      }
     }
 
-    buffer.push('MATCH ');
-  },
-
-  merge(buffer) {
-    buffer.push('\nMERGE ');
-  },
-
-  'on-create'(buffer, node) {
-    buffer.push('\nON CREATE SET ');
-
-    buffer.push(
-      node.items
-        .map(item => {
-          const exp = [];
-          if (item.type === 'set-property') {
-            walkExpression(exp, item.property);
-            exp.push(' = ');
-            walkExpression(exp, item.expression);
-          }
-
-          if (item.type === 'merge-properties') {
-            exp.push(item.identifier.name, ' += ');
-            walkExpression(exp, item.expression);
-          }
-
-          return exp.join('');
-        })
-        .join(', '),
-    );
-
-    this.skip();
-  },
-  'on-match'(buffer, node) {
-    buffer.push('\nON MATCH SET ');
-
-    buffer.push(
-      node.items
-        .map(item => {
-          const exp = [];
-          if (item.type === 'set-property') {
-            walkExpression(exp, item.property);
-            exp.push(' = ');
-            walkExpression(exp, item.expression);
-          }
-
-          if (item.type === 'merge-properties') {
-            exp.push(item.identifier.name, ' += ');
-            walkExpression(exp, item.expression);
-          }
-
-          return exp.join('');
-        })
-        .join(', '),
-    );
-
-    this.skip();
-  },
-  unwind(buffer, node) {
-    buffer.push('\nUNWIND ');
-
-    const exp = [];
-    walkExpression(exp, node.expression);
-    buffer.push(exp.join(''));
-    buffer.push(' AS ', node.alias.name, '\n');
-  },
-  with(buffer, node) {
-    buffer.push('\nWITH ');
-
-    walkProjections(buffer, node);
-    buffer.push('\n');
-  },
-
-  delete(buffer, node) {
-    if (node.detach) {
-      buffer.push('DETACH ');
+    if (ctx.between.has(parent)) {
+      const betweenHandlers = ctx.between.get(parent);
+      if (betweenHandlers[prop]) {
+        unhandled = false;
+        betweenHooks = betweenHandlers[prop];
+      }
     }
 
-    buffer.push('DELETE ');
-
-    buffer.push(
-      ...node.expressions
-        .map(expNode => {
-          const exp = [];
-          walkExpression(exp, expNode);
-          return exp.join('');
-        })
-        .join(', '),
-    );
-  },
-
-  'set-property'(buffer, node) {
-    const prop = ['SET '];
-    walkExpression(prop, node.property);
-    prop.push(' = ');
-    walkExpression(prop, node.expression);
-
-    buffer.push(prop.join(''));
-  },
-
-  'node-pattern'(buffer, node) {
-    buffer.push('(');
-
-    if (node.identifier) {
-      buffer.push(node.identifier.name);
+    if (unhandled) {
+      return logUnhandled(node, parent, prop, index, siblingCount, depth);
     }
 
-    if (node.labels) {
-      buffer.push(...node.labels.map(l => `:${l.name}`));
-    }
-
-    if (node.properties) {
-      buffer.push(' ');
-      walkExpression(buffer, node.properties);
-    }
-
-    buffer.push(')');
-
-    this.skip();
-  },
-  'rel-pattern'(buffer, node) {
-    if (node.direction === 0) {
-      buffer.push('<-');
-    }
-    if (node.direction === 1) {
-      buffer.push('-');
-    }
-
-    const emptyRel = node.reltypes.length === 0 && node.identifier == null;
-
-    if (!emptyRel) buffer.push('[');
-
-    if (node.identifier) {
-      buffer.push(node.identifier.name);
-    }
-
-    if (node.reltypes) {
-      buffer.push(...node.reltypes.map(l => `:${l.name}`));
-    }
-
-    if (node.properties) {
-      buffer.push(' ');
-      walkExpression(buffer, node.properties);
-    }
-
-    if (!emptyRel) buffer.push(']');
-
-    if (node.direction === 0) {
-      buffer.push('-');
-    }
-    if (node.direction === 1) {
-      buffer.push('->');
-    }
-  },
-  return(buffer, node) {
-    buffer.push('\nRETURN ');
-    walkProjections(buffer, node);
-  },
-  create(buffer, node) {
-    buffer.push('\nCREATE ');
-
-    if (node.unique) {
-      buffer.push('UNIQUE ');
-    }
-  },
-  set(buffer, node) {
-    buffer.push('\nSET ');
-    buffer.push(
-      node.items
-        .map(item => {
-          const exp = [];
-          if (item.type === 'set-property') {
-            walkExpression(exp, item.property);
-            exp.push(' = ');
-            walkExpression(exp, item.expression);
-          }
-
-          if (item.type === 'merge-properties') {
-            exp.push(item.identifier.name, ' += ');
-            walkExpression(exp, item.expression);
-          }
-
-          return exp.join('');
-        })
-        .join(', '),
-    );
-    this.skip();
-  },
-};
-
-const onLeave = {
-  statement() {
-    return ';';
-  },
-  match(buffer, node) {
-    if (node.predicate) {
-      buffer.push('\nWHERE ');
-      walkExpression(buffer, node.predicate);
-    }
-
-    buffer.push('\n');
-  },
-};
-
-// eslint-disable-next-line no-unused-vars
-function print(ast, transform = identity) {
-  const buffer = [];
-
-  // transform
-  function walkNode() {
-    const M = new WeakMap();
-
-    return function(handlers) {
-      walk(ast, {
-        enter(node) {
-          const handler = handlers[node.type];
-
-          if (typeof handler === 'function') {
-            const onLeave = handler(node);
-            if (typeof onLeave === 'function') {
-              M.set(node, onLeave);
-            }
-          }
-        },
-        leave(node) {
-          if (M.has(node)) {
-            const fn = M.get(node);
-            fn();
-          }
-        },
-      });
+    const api = {
+      before(key, handler) {
+        let handlers;
+        if (ctx.before.has(node)) {
+          handlers = ctx.before.get(node);
+        } else {
+          handlers = {};
+          ctx.before.set(node, handlers);
+        }
+        handlers[key] = handlers[key] || [];
+        handlers[key].push(handler);
+      },
+      after(key, handler) {
+        let handlers;
+        if (ctx.after.has(node)) {
+          handlers = ctx.after.get(node);
+        } else {
+          handlers = {};
+          ctx.after.set(node, handlers);
+        }
+        handlers[key] = handlers[key] || [];
+        handlers[key].push(handler);
+      },
+      between(key, handler) {
+        let handlers;
+        if (ctx.between.has(node)) {
+          handlers = ctx.between.get(node);
+        } else {
+          handlers = {};
+          ctx.between.set(node, handlers);
+        }
+        handlers[key] = handlers[key] || [];
+        handlers[key].push(handler);
+      },
     };
-  }
 
-  transform(walkNode());
+    const leave = handler
+      ? handler.call(api, ctx.buffer, node, parent, prop, index, siblingCount)
+      : null;
 
-  walk(ast, {
-    enter(node, parent, prop, index) {
-      const handler = onEnter[node.type];
-      if (typeof handler === 'function') {
-        const out = handler.call(this, buffer, node, parent, prop, index);
+    if (siblingCount >= 2 && index < siblingCount - 1) {
+      betweenHooks.forEach(hook => hook());
+    }
+
+    posthooks.forEach(hook => hook());
+
+    if (typeof leave === 'string') {
+      ctx.buffer.push(leave);
+      return;
+    }
+
+    if (typeof leave === 'function') {
+      return (...args) => {
+        const out = leave(...args);
+
         if (typeof out === 'string') {
-          buffer.push(out);
+          ctx.buffer.push(out);
         }
-      } else if (typeof onLeave[node.type] !== 'function') {
-        DEBUG.verbose() && console.log('> (unhandled)', node.type);
-      }
-    },
-    leave(node, parent, prop, index) {
-      const handler = onLeave[node.type];
-      if (typeof handler === 'function') {
-        const out = handler.call(this, buffer, node, parent, prop, index);
-        if (typeof out === 'string') {
-          buffer.push(out);
-        }
-      } else if (typeof onEnter[node.type] !== 'function') {
-        DEBUG.verbose() && console.log('< (unhandled)', node.type);
-      }
-    },
+      };
+    }
   });
 
-  return buffer
-    .join('')
-    .replace(/\n{2,}/gm, '\n')
-    .trim();
+  walk(ast);
+  return ctx.buffer.join('');
 }
 
 module.exports = print;
+
+function logUnhandled(node, parent, prop, index, siblingCount, depth) {
+  if (siblingCount) {
+    console.log(
+      '%s> [%s] (%s.%s #%d/%d)',
+      ' '.repeat(depth),
+      node.type,
+      parent.type,
+      prop,
+      index + 1,
+      siblingCount,
+      '[',
+      Object.keys(node)
+        .filter(k => k !== 'type')
+        .join(', '),
+      ']',
+    );
+    return () => {
+      console.log(
+        '%s< [%s] (%s.%s #%d/%d)',
+        ' '.repeat(depth),
+        node.type,
+        parent.type,
+        prop,
+        index + 1,
+        siblingCount,
+      );
+    };
+  }
+
+  console.log(
+    '%s> [%s]',
+    ' '.repeat(depth),
+    node.type,
+    '[',
+    Object.keys(node)
+      .filter(k => k !== 'type')
+      .join(', '),
+    ']',
+  );
+
+  return () => {
+    console.log('%s< [%s]', ' '.repeat(depth), node.type);
+  };
+}
