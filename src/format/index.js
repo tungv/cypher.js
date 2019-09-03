@@ -117,15 +117,15 @@ function print(ast, transform) {
 
     if (typeof leave === 'function') {
       return (...args) => {
+        const out = leave(...args);
         if (siblingCount >= 2 && index < siblingCount - 1) {
           betweenHooks.forEach(hook => hook());
         }
-        const out = leave(...args);
+        posthooks.forEach(hook => hook());
 
         if (typeof out === 'string') {
           ctx.buffer.push(out);
         }
-        posthooks.forEach(hook => hook());
       };
     }
 

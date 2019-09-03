@@ -10,6 +10,7 @@ module.exports = {
   },
 
   match(buffer, node) {
+    buffer.push('\n');
     if (node.optional) {
       buffer.push('OPTIONAL ');
     }
@@ -178,12 +179,15 @@ module.exports = {
   },
   with(buffer, node) {
     buffer.push('\nWITH ');
-    walkProjections(buffer, node);
+    walkProjections(this, buffer, node);
     return () => '\n';
   },
   return(buffer, node) {
     buffer.push('\nRETURN ');
-    walkProjections(buffer, node);
+    walkProjections(this, buffer, node);
+  },
+  'order-by'(buffer) {
+    buffer.push(' ORDER BY ');
   },
   projection(buffer, node, parent, prop, index, siblingCount) {
     this.before('alias', () => buffer.push(' AS '));
@@ -283,7 +287,7 @@ module.exports = {
   },
 };
 
-function walkProjections(buffer, node) {
+function walkProjections(ctx, buffer, node) {
   if (node.distinct) {
     buffer.push('DISTINCT ');
   }
@@ -291,4 +295,11 @@ function walkProjections(buffer, node) {
   if (node.includeExisting) {
     buffer.push('* ');
   }
+  ctx.before('skip', () => {
+    buffer.push(' SKIP ');
+  });
+
+  ctx.before('limit', () => {
+    buffer.push(' LIMIT ');
+  });
 }

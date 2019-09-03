@@ -109,4 +109,13 @@ RETURN count(DISTINCT *) AS count;`;
 
     expect(formatted).toEqual(query);
   });
+
+  test('apply operator with multiple args', () => {
+    const query = /* cypher */ `MATCH (n)
+RETURN dosomething(a, { b: "c" }, false, 1, 1.1);`;
+    const ast = parse(query);
+    const formatted = print(ast.root);
+
+    expect(formatted).toEqual(query);
+  });
 });
