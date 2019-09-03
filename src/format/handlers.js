@@ -19,7 +19,7 @@ module.exports = {
     this.before('predicate', () => buffer.push('\nWHERE '));
   },
   merge() {
-    return 'MERGE ';
+    return '\nMERGE ';
   },
   'on-create'(buffer) {
     buffer.push('\nON CREATE SET ');
@@ -250,6 +250,15 @@ module.exports = {
     return () => {
       buffer.push(')');
     };
+  },
+  'apply-all-operator'(buffer, node) {
+    this.after('funcName', () => {
+      if (node.distinct) {
+        buffer.push('(DISTINCT *)');
+      } else {
+        buffer.push('(*)');
+      }
+    });
   },
   'function-name'(buffer, node) {
     buffer.push(node.value);

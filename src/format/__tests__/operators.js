@@ -91,4 +91,22 @@ RETURN -n[n.a ^ 2 * (n.x + n.y)];`;
 
     expect(formatted).toEqual(query);
   });
+
+  test('apply all operator', () => {
+    const query = /* cypher */ `MATCH (n)
+RETURN count(*) AS count;`;
+    const ast = parse(query);
+    const formatted = print(ast.root);
+
+    expect(formatted).toEqual(query);
+  });
+
+  test('apply all operator with DISTINCT', () => {
+    const query = /* cypher */ `MATCH (n)
+RETURN count(DISTINCT *) AS count;`;
+    const ast = parse(query);
+    const formatted = print(ast.root);
+
+    expect(formatted).toEqual(query);
+  });
 });

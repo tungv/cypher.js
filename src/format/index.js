@@ -3,8 +3,9 @@ const handlers = require('./handlers');
 const makeWalker = require('./makeWalker');
 
 function print(ast, transform) {
+  const root = ast.root || ast;
   const ctx = {
-    buffer: [],
+    buffer: ['\n'],
     before: new WeakMap(),
     after: new WeakMap(),
     between: new WeakMap(),
@@ -29,7 +30,7 @@ function print(ast, transform) {
       }
     });
 
-    transformWalk(ast);
+    transformWalk(root);
   }
 
   const walk = makeWalker(function(
@@ -140,11 +141,13 @@ function print(ast, transform) {
     };
   });
 
-  walk(ast);
+  walk(root);
+
   return ctx.buffer
     .join('')
     .split(/\n{2,}/gm)
-    .join('\n');
+    .join('\n')
+    .trim('\n');
 }
 
 module.exports = print;

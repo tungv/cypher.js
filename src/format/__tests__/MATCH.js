@@ -3,7 +3,7 @@ const print = require('../index');
 
 describe('MATCH', () => {
   it('should work with simplest query', () => {
-    const query = 'MATCH (n) RETURN n;';
+    const query = /* cypher */ `MATCH (n) RETURN n`;
 
     const ast = parse(query);
     const formatted = print(ast.root);
