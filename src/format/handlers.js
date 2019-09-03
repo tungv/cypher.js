@@ -1,4 +1,4 @@
-const { toCypherSymbol } = require('./binary-operator');
+const { getPriority, toCypherSymbol } = require('./binary-operator');
 
 module.exports = {
   statement() {
@@ -191,8 +191,40 @@ module.exports = {
       return () => ', ';
     }
   },
-  'binary-operator'(buffer, node) {
+  'binary-operator'(buffer, node, parent) {
+    const priority = getPriority(node);
+    const parentPriority = getPriority(parent);
+
+    if (parentPriority && priority < parentPriority) {
+      buffer.push('(');
+    }
+
     this.before('arg2', () => buffer.push(' ', toCypherSymbol(node.op), ' '));
+    return () => {
+      if (parentPriority && priority < parentPriority) {
+        buffer.push(')');
+      }
+    };
+  },
+  'unary-operator'(buffer, node) {
+    const isPostfix = node.op === 'is-null' || node.op === 'is-not-null';
+    const symbol = toCypherSymbol(node.op);
+
+    if (!isPostfix) {
+      buffer.push(symbol);
+    }
+
+    if (isPostfix) {
+      return () => buffer.push(' ', symbol);
+    }
+  },
+  'subscript-operator'(buffer) {
+    this.before('subscript', () => {
+      buffer.push('[');
+    });
+    this.after('subscript', () => {
+      buffer.push(']');
+    });
   },
   parameter(buffer, node) {
     return `$${node.name}`;

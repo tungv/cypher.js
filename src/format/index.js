@@ -1,3 +1,4 @@
+const { verbose } = require('./DEBUG');
 const handlers = require('./handlers');
 const makeWalker = require('./makeWalker');
 
@@ -69,7 +70,7 @@ function print(ast, transform) {
       }
     }
 
-    if (unhandled) {
+    if (unhandled && verbose()) {
       return logUnhandled(node, parent, prop, index, siblingCount, depth);
     }
 

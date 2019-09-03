@@ -16,7 +16,7 @@ module.exports = function makeWalker(enter) {
 
     // fix parser bugs
     // 1 invalid projection alias
-    if (type === 'projection' && node.alias && node.alias.name.includes(' ')) {
+    if (type === 'projection' && node.alias && node.alias.name.match(/\W/)) {
       delete node.alias;
     }
 
