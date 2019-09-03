@@ -44,7 +44,7 @@ module.exports = function makeWalker(enter) {
             key,
             expression: item,
           };
-          walk(propNode, node, depth + 1, key, index, array.length);
+          walk(propNode, node, depth + 1, 'map-key', index, array.length);
         });
         return;
       }

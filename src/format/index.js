@@ -113,30 +113,37 @@ function print(ast, transform) {
       ? handler.call(api, ctx.buffer, node, parent, prop, index, siblingCount)
       : null;
 
-    if (siblingCount >= 2 && index < siblingCount - 1) {
-      betweenHooks.forEach(hook => hook());
-    }
-
-    posthooks.forEach(hook => hook());
-
-    if (typeof leave === 'string') {
-      ctx.buffer.push(leave);
-      return;
-    }
-
     if (typeof leave === 'function') {
       return (...args) => {
+        if (siblingCount >= 2 && index < siblingCount - 1) {
+          betweenHooks.forEach(hook => hook());
+        }
         const out = leave(...args);
 
         if (typeof out === 'string') {
           ctx.buffer.push(out);
         }
+        posthooks.forEach(hook => hook());
       };
     }
+
+    if (typeof leave === 'string') {
+      ctx.buffer.push(leave);
+    }
+
+    return () => {
+      if (siblingCount >= 2 && index < siblingCount - 1) {
+        betweenHooks.forEach(hook => hook());
+      }
+      posthooks.forEach(hook => hook());
+    };
   });
 
   walk(ast);
-  return ctx.buffer.join('');
+  return ctx.buffer
+    .join('')
+    .split(/\n{2,}/gm)
+    .join('\n');
 }
 
 module.exports = print;

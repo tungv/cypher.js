@@ -4,9 +4,11 @@ module.exports = {
   statement() {
     return () => ';';
   },
-  query() {
-    return '';
+
+  query(buffer) {
+    this.between('clauses', () => buffer.push(''));
   },
+
   match(buffer, node) {
     if (node.optional) {
       buffer.push('OPTIONAL ');
@@ -19,8 +21,26 @@ module.exports = {
   merge() {
     return 'MERGE ';
   },
+  'on-create'(buffer) {
+    buffer.push('\nON CREATE SET ');
+    this.between('items', () => {
+      buffer.push(', ');
+    });
+  },
+  'on-match'(buffer) {
+    buffer.push('\nON MATCH SET ');
+    this.between('items', () => {
+      buffer.push(', ');
+    });
+  },
+  'merge-properties'(buffer) {
+    this.after('identifier', () => {
+      buffer.push(' += ');
+    });
+  },
   'node-pattern'(buffer) {
     buffer.push('(');
+    this.before('properties', () => buffer.push(' '));
     return () => {
       buffer.push(')');
     };
@@ -38,11 +58,12 @@ module.exports = {
     if (node.direction === 2) {
       buffer.push('-');
     }
-
-    this.before('reltypes', () => buffer.push('['));
-    this.after('reltypes', () => buffer.push(']'));
+    this.before('properties', () => buffer.push(' '));
+    const emptyRel = node.reltypes.length === 0 && node.identifier == null;
+    if (!emptyRel) buffer.push('[');
 
     return () => {
+      if (!emptyRel) buffer.push(']');
       if (node.direction === 0) {
         buffer.push('-');
       }
@@ -60,12 +81,12 @@ module.exports = {
   identifier(buffer, node) {
     return node.name;
   },
-  map(buffer, node, parent, prop, index, siblingCount) {
-    const long = siblingCount >= 2;
+  map(buffer, node) {
+    const long = Object.keys(node.entries).length > 1;
     if (long) {
-      buffer.push(' {\n  ');
+      buffer.push('{\n');
     } else {
-      buffer.push(' { ');
+      buffer.push('{ ');
     }
 
     this.between('map-key', () => {
@@ -78,14 +99,15 @@ module.exports = {
 
     return () => {
       if (long) {
-        buffer.push('\n} ');
+        buffer.push('\n}');
       } else {
         buffer.push(' }');
       }
     };
   },
-  'map-key'(buffer, node) {
-    buffer.push(node.key, ': ');
+  'map-key'(buffer, node, parent, prop, index, siblingCount) {
+    const long = siblingCount > 1;
+    buffer.push(long ? '  ' : '', node.key, ': ');
   },
   set(buffer) {
     buffer.push('\nSET ');
@@ -110,7 +132,6 @@ module.exports = {
     return () => ', ';
   },
   'map-projection-literal'(buffer, node, parent, prop, index, siblingCount) {
-    console.log(require('util').inspect(node, { depth: null, colors: true }));
     this.after('propName', () => {
       buffer.push(': ');
     });
@@ -133,6 +154,13 @@ module.exports = {
       return ']';
     };
   },
+  create(buffer, node) {
+    buffer.push('\nCREATE ');
+
+    if (node.unique) {
+      buffer.push('UNIQUE ');
+    }
+  },
   delete(buffer, node) {
     buffer.push('\n');
     if (node.detach) {
@@ -141,9 +169,17 @@ module.exports = {
 
     buffer.push('DELETE ');
   },
+  unwind(buffer) {
+    buffer.push('UNWIND ');
+    this.before('alias', () => {
+      buffer.push(' AS ');
+    });
+    return () => '\n';
+  },
   with(buffer, node) {
     buffer.push('\nWITH ');
     walkProjections(buffer, node);
+    return () => '\n';
   },
   return(buffer, node) {
     buffer.push('\nRETURN ');
@@ -167,8 +203,6 @@ module.exports = {
     });
   },
   'apply-operator'(buffer, node) {
-    console.log(require('util').inspect(node, { depth: null, colors: true }));
-
     this.after('funcName', () => {
       buffer.push('(');
 
