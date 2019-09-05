@@ -147,6 +147,7 @@ module.exports = {
     return () => ', ';
   },
   'pattern-comprehension'(buffer) {
+    this.before('predicate', () => buffer.push(' WHERE '));
     buffer.push('[');
     this.before('eval', () => {
       buffer.push(' | ');

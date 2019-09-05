@@ -44,7 +44,7 @@ const toCypherSymbol = op => {
     and: 'AND',
     or: 'OR',
     xor: 'XOR',
-    not: 'NOT',
+    not: 'NOT ',
 
     'not-equal': '<>',
     'less-than': '<',
@@ -60,7 +60,7 @@ const toCypherSymbol = op => {
   }[op];
 
   if (!res) {
-    // console.error(op);
+    return '';
   }
 
   return res;
