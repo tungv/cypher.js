@@ -33,9 +33,9 @@
   "license": "ISC",
   "dependencies": {
     "estree-walker": "^0.6.1",
-    "node-addon-api": "^1.6.2",
-    "node-gyp-build": "^4.1.0",
-    "prebuild-install": "^5.3.0"
+    "node-addon-api": "^1.7.1",
+    "node-gyp-build": "^4.1.1",
+    "prebuild-install": "^5.3.1"
   },
   "devDependencies": {
     "babel-eslint": "^9.0.0",
@@ -46,11 +46,11 @@
     "eslint-plugin-jsx-a11y": "^6.2.1",
     "eslint-plugin-react": "^7.14.0",
     "eslint-plugin-react-hooks": "^1.5.0",
-    "husky": "^2.4.1",
-    "jest": "^24.8.0",
-    "lint-staged": "^8.2.1",
-    "prebuildify": "^3.0.0",
-    "prettier": "^1.15.3",
+    "husky": "^3.0.5",
+    "jest": "^24.9.0",
+    "lint-staged": "^9.2.5",
+    "prebuildify": "^3.0.4",
+    "prettier": "^1.18.2",
     "prettier-eslint": "^8.8.2",
     "prettier-eslint-cli": "^4.7.1"
   },
