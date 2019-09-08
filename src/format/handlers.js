@@ -16,7 +16,6 @@ module.exports = {
     }
 
     buffer.push('MATCH ');
-
     this.before('predicate', () => buffer.push('\nWHERE '));
   },
   merge() {
@@ -39,6 +38,46 @@ module.exports = {
       buffer.push(' += ');
     });
   },
+  call(buffer) {
+    buffer.push('\nCALL ');
+
+    this.before('args', () => buffer.push('('));
+    this.between('args', () => buffer.push(', '));
+    this.after('args', () => buffer.push(')\n'));
+
+    this.before('projections', () => buffer.push('YIELD '));
+  },
+  'proc-name'(buffer, node) {
+    buffer.push(node.value);
+  },
+  any(buffer) {
+    buffer.push('any(');
+
+    this.after('identifier', () => buffer.push(' IN '));
+    this.before('predicate', () => buffer.push(' WHERE '));
+    return () => buffer.push(')');
+  },
+  none(buffer) {
+    buffer.push('none(');
+
+    this.after('identifier', () => buffer.push(' IN '));
+    this.before('predicate', () => buffer.push(' WHERE '));
+    return () => buffer.push(')');
+  },
+  single(buffer) {
+    buffer.push('single(');
+
+    this.after('identifier', () => buffer.push(' IN '));
+    this.before('predicate', () => buffer.push(' WHERE '));
+    return () => buffer.push(')');
+  },
+  all(buffer) {
+    buffer.push('all(');
+
+    this.after('identifier', () => buffer.push(' IN '));
+    this.before('predicate', () => buffer.push(' WHERE '));
+    return () => buffer.push(')');
+  },
   'node-pattern'(buffer) {
     buffer.push('(');
     this.before('properties', () => buffer.push(' '));
@@ -60,7 +99,10 @@ module.exports = {
       buffer.push('-');
     }
     this.before('properties', () => buffer.push(' '));
-    const emptyRel = node.reltypes.length === 0 && node.identifier == null;
+    const emptyRel =
+      node.reltypes.length === 0 &&
+      node.identifier == null &&
+      node.varLength == null;
     if (!emptyRel) buffer.push('[');
 
     return () => {
@@ -78,6 +120,17 @@ module.exports = {
   },
   reltype(buffer, node) {
     buffer.push(':', node.name);
+  },
+  range(buffer, node) {
+    buffer.push('*');
+
+    if (node.start) {
+      buffer.push(node.start);
+    }
+
+    if (node.end) {
+      buffer.push('..', node.end);
+    }
   },
   identifier(buffer, node) {
     return node.name;

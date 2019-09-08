@@ -48,7 +48,7 @@ function print(ast, transform) {
 
     if (ctx.before.has(parent)) {
       const beforeHandlers = ctx.before.get(parent);
-      if (beforeHandlers[prop]) {
+      if (beforeHandlers[prop] && (siblingCount ? index === 0 : true)) {
         unhandled = false;
         beforeHandlers[prop].forEach(prehook => {
           prehook();
@@ -115,13 +115,20 @@ function print(ast, transform) {
       ? handler.call(api, ctx.buffer, node, parent, prop, index, siblingCount)
       : null;
 
+    function howItShouldEnd() {
+      if (siblingCount >= 2 && index < siblingCount - 1) {
+        betweenHooks.forEach(hook => hook());
+      }
+
+      if (siblingCount ? index === siblingCount - 1 : true) {
+        posthooks.forEach(hook => hook());
+      }
+    }
+
     if (typeof leave === 'function') {
       return (...args) => {
         const out = leave(...args);
-        if (siblingCount >= 2 && index < siblingCount - 1) {
-          betweenHooks.forEach(hook => hook());
-        }
-        posthooks.forEach(hook => hook());
+        howItShouldEnd();
 
         if (typeof out === 'string') {
           ctx.buffer.push(out);
@@ -133,12 +140,7 @@ function print(ast, transform) {
       ctx.buffer.push(leave);
     }
 
-    return () => {
-      if (siblingCount >= 2 && index < siblingCount - 1) {
-        betweenHooks.forEach(hook => hook());
-      }
-      posthooks.forEach(hook => hook());
-    };
+    return howItShouldEnd;
   });
 
   walk(root);
