@@ -2,6 +2,19 @@ const { parse } = require('../../../index');
 const print = require('../index');
 
 describe('CALL statement', () => {
+  test.skip('simple CALL YIELD WHERE', () => {
+    const query = /* cypher */ `
+    CALL sum(1, 2, 3) YIELD value WHERE value.p = 1 RETURN value
+    `;
+
+    const ast = parse(query);
+    const formatted = print(ast);
+
+    expect(formatted).toEqual(/* cypher */ `CALL sum(1, 2, 3)
+YIELD value WHERE value.p = 1
+RETURN value;`);
+  });
+
   test('CALL statement should work', () => {
     const query = /* cypher */ `
     CALL db.index.fulltext.queryNodes("fullTextIdx", $query +"*")

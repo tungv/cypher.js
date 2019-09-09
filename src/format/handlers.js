@@ -243,6 +243,13 @@ module.exports = {
   'order-by'(buffer) {
     buffer.push(' ORDER BY ');
   },
+  'sort-item'(buffer, node) {
+    return () => {
+      if (node.ascending === false) {
+        buffer.push(' DESC ');
+      }
+    };
+  },
   projection(buffer, node, parent, prop, index, siblingCount) {
     this.before('alias', () => buffer.push(' AS '));
     if (index !== siblingCount - 1) {
